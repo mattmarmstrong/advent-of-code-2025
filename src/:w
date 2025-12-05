@@ -1,0 +1,114 @@
+use std::str::FromStr;
+
+#[inline]
+fn get_min_max(l: usize) -> usize {
+    10_usize.pow((l - 1) as u32)
+}
+
+fn parse_line(line: &str) -> Vec<String> {
+    line.split("-")
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
+}
+
+#[inline]
+fn format_n_seq(half: String) -> usize {
+    format!("{}{}", half, half).parse::<usize>().ok().unwrap()
+}
+
+fn add_dups(start: String, end: String, total: &mut usize) {
+    let first_seq = String::from_str(&start[..(start.len() / 2)]).ok().unwrap();
+    let max = end.parse::<usize>().ok().unwrap();
+    let mut dup = format_n_seq(first_seq);
+    while dup >= start.parse::<usize>().ok().unwrap() && dup <= max {
+        *total += dup;
+        let dup_s = dup.to_string();
+        let x = String::from_str(&dup_s[..(dup_s.len() / 2)]).ok().unwrap();
+        let next_seq = x.parse::<usize>().ok().unwrap() + 1;
+        dup = format_n_seq(next_seq.to_string());
+    }
+}
+
+fn check_id_range(mut p: Vec<String>) -> Option<(String, String)> {
+    let end = p.pop().unwrap();
+    let start = p.pop().unwrap();
+    let start_l = start.len();
+    let end_l = end.len();
+    let start_is_even = start_l.is_multiple_of(2);
+    let end_is_even = end_l.is_multiple_of(2);
+    println!("START: {} END: {}", start, end);
+    if !(start_is_even || end_is_even) {
+        None
+    } else {
+        let start = if !start_is_even {
+            get_min_max(end_l)
+        } else {
+            start.parse::<usize>().ok().unwrap()
+        };
+
+        let end = if !end_is_even {
+            get_min_max(start_l + 1) - 1
+        } else {
+            end.parse::<usize>().ok().unwrap()
+        };
+
+        Some((start.to_string(), end.to_string()))
+    }
+}
+
+pub fn solve_pt1(input: &str) -> usize {
+    let mut total = 0;
+    input
+        .split(',')
+        .take_while(|x| !x.is_empty())
+        .for_each(|x| {
+            let line = parse_line(x.trim());
+            if let Some((start, end)) = check_id_range(line) {
+                add_dups(start, end, &mut total);
+            }
+        });
+
+    total
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const EXAMPLE: &str = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
+
+    #[test]
+    fn test_check_id_range() {
+        let start = "998".to_string();
+        let end = "1010".to_string();
+        let expected_start = "1000".to_string();
+        let expected_end = "1010".to_string();
+        assert_eq!(
+            check_id_range(vec![start, end]),
+            Some((expected_start, expected_end))
+        );
+    }
+
+    #[test]
+    fn test_check_id_range_2() {
+        let start = "95".to_string();
+        let end = "115".to_string();
+        let expected_start = "95".to_string();
+        let expected_end = "99".to_string();
+        assert_eq!(
+            check_id_range(vec![start, end]),
+            Some((expected_start, expected_end))
+        );
+    }
+
+    #[test]
+    fn test_add_dups() {
+        let mut total = 0;
+        add_dups("38593856".to_string(), "38593862".to_string(), &mut total);
+        assert_eq!(total, 38593859);
+    }
+
+    #[test]
+    fn test_pt1() {
+        assert_eq!(solve_pt1(EXAMPLE), 1227775554)
+    }
+}

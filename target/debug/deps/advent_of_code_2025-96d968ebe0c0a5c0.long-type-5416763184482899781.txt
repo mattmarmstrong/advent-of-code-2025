@@ -1,0 +1,1 @@
+std::iter::Rev<std::iter::TakeWhile<std::vec::IntoIter<char>, {closure@src/day_1/mod.rs:5:21: 5:24}>>
